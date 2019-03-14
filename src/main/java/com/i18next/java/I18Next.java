@@ -146,8 +146,12 @@ public class I18Next {
         }
     }
 
+    public String _t(String lang, String key) {
+        return t(lang, key, null);
+    }
+    
     public String t(String key) {
-        return t(key, null);
+        return _t(mOptions.getLanguage(), key);
     }
 
     /**
@@ -156,21 +160,29 @@ public class I18Next {
      * @param keys
      * @return
      */
+//    public String _t(String lang, String... keys) {
+//        return t(lang, keys, null);
+//    }
+
     public String t(String... keys) {
-        return t(keys, null);
+        return _t(mOptions.getLanguage(), keys, null);
+    }
+
+    public String _t(String lang, String key, Operation operation) {
+        String[] keys = {key};
+        return _t(lang, keys, operation);
     }
 
     public String t(String key, Operation operation) {
-        String[] keys = {key};
-        return t(keys, operation);
+        return _t(mOptions.getLanguage(), key, operation);
     }
 
-    public String t(String[] keys, Operation operation) {
+    public String _t(String lang, String[] keys, Operation operation) {
         String innerProcessValue = null;
         if (keys != null && keys.length > 0) {
             for (String key : keys) {
-                String rawValue = getValueRaw(key, operation);
-                innerProcessValue = transformRawValue(operation, rawValue);
+                String rawValue = getValueRaw(lang, key, operation);
+                innerProcessValue = transformRawValue(lang, operation, rawValue);
                 if (innerProcessValue != null) {
                     break;
                 } else if (mOptions.isDebugMode()) {
@@ -180,26 +192,36 @@ public class I18Next {
         }
         return innerProcessValue;
     }
+    
+    public String t(String[] keys, Operation operation) {
+        return _t(mOptions.getLanguage(), keys, operation);
+    }
 
-    private String transformRawValue(Operation operation, String rawValue) {
+    private String transformRawValue(String lang, Operation operation, String rawValue) {
         String innerProcessValue;
         if (operation instanceof Operation.PostOperation) {
-            rawValue = ((Operation.PostOperation) operation).postProcess(rawValue);
+            rawValue = ((Operation.PostOperation) operation).postProcess(lang, rawValue);
         }
         String rawValueNestingReplaced = getRawWithNestingReplaced(rawValue, operation);
         if (rawValueNestingReplaced != null) {
-            innerProcessValue = transformRawValue(operation, rawValueNestingReplaced);
+            innerProcessValue = transformRawValue(lang, operation, rawValueNestingReplaced);
         } else {
             innerProcessValue = rawValue;
         }
         return innerProcessValue;
     }
 
-    public boolean existValue(String key) {
-        return getValueRaw(key, null) != null;
+    public boolean existValue(String lang, String key) {
+        return getValueRaw(lang, key, null) != null;
     }
+    
+     public boolean existValue(String key) {
+         return existValue(mOptions.getLanguage(), key);
+     }
+    
+    
 
-    private String getValueRaw(String key, Operation operation) {
+    private String getValueRaw(String lang, String key, Operation operation) {
         if (key == null) {
             return null;
         }
@@ -211,29 +233,29 @@ public class I18Next {
             }
             if (operation instanceof Operation.PreOperation) {
                 // it's the last key part
-                key = ((Operation.PreOperation) operation).preProcess(key);
+                key = ((Operation.PreOperation) operation).preProcess(lang, key);
             }
 
-            value = getValueRawWithoutPreprocessing(namespace, key);
+            value = getValueRawWithoutPreprocessing(lang, namespace, key);
 
             if (value == null && operation instanceof Operation.PreOperation) {
                 String repreProcessedKey = ((Operation.PreOperation) operation).preProcessAfterNoValueFound(key);
                 if (repreProcessedKey != null && !repreProcessedKey.equals(key)) {
-                    value = getValueRawWithoutPreprocessing(namespace, repreProcessedKey);
+                    value = getValueRawWithoutPreprocessing(lang, namespace, repreProcessedKey);
                 }
             }
         }
         return value;
     }
 
-    private String getValueRawWithoutPreprocessing(String namespace, String key) {
+    private String getValueRawWithoutPreprocessing(String lang, String namespace, String key) {
         String value;
 
         String[] splitKeys = splitKeyPath(key);
         if (splitKeys == null) {
             value = null;
         } else {
-            value = getValueRawByLanguageWithNamespace(mOptions.getLanguage(), namespace, splitKeys);
+            value = getValueRawByLanguageWithNamespace(lang, namespace, splitKeys);
             if (value == null) {
                 value = getValueRawByLanguageWithNamespace(mOptions.getFallbackLanguage(), namespace, splitKeys);
             }

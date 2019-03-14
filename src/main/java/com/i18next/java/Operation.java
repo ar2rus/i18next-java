@@ -5,7 +5,6 @@ package com.i18next.java;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author stan
@@ -13,11 +12,11 @@ import java.util.Set;
 public interface Operation {
 
     public interface PostOperation extends Operation {
-        public abstract String postProcess(String source);
+        public abstract String postProcess(String lang, String source);
     }
 
     public interface PreOperation extends Operation {
-        public abstract String preProcess(String key);
+        public abstract String preProcess(String lang, String key);
 
         public abstract String preProcessAfterNoValueFound(String key);
     }
@@ -30,11 +29,11 @@ public interface Operation {
         }
 
         @Override
-        public String postProcess(String source) {
+        public String postProcess(String lang, String source) {
             if (mOperations != null) {
                 for (Operation operation : mOperations) {
                     if (operation instanceof PostOperation) {
-                        source = ((PostOperation) operation).postProcess(source);
+                        source = ((PostOperation) operation).postProcess(lang, source);
                     }
                 }
             }
@@ -42,11 +41,11 @@ public interface Operation {
         }
 
         @Override
-        public String preProcess(String key) {
+        public String preProcess(String lang, String key) {
             if (mOperations != null) {
                 for (Operation operation : mOperations) {
                     if (operation instanceof PreOperation) {
-                        key = ((PreOperation) operation).preProcess(key);
+                        key = ((PreOperation) operation).preProcess(lang, key);
                     }
                 }
             }
@@ -116,9 +115,9 @@ public interface Operation {
         }
 
         @Override
-        public String preProcess(String key) {
+        public String preProcess(String lang, String key) {
             if (key != null) {
-                int pluralExtension = Plurals.getInstance().get(I18Next.getInstance().getOptions().getLanguage(), mCount);
+                int pluralExtension = Plurals.getInstance().get(lang, mCount);
 
                 if (pluralExtension != 1) {
                     // plural
@@ -143,8 +142,8 @@ public interface Operation {
         }
 
         @Override
-        public String postProcess(String source) {
-            return mInterpolation.postProcess(source);
+        public String postProcess(String lang, String source) {
+            return mInterpolation.postProcess(lang, source);
         }
 
         @Override
@@ -165,7 +164,7 @@ public interface Operation {
         }
 
         @Override
-        public String preProcess(String key) {
+        public String preProcess(String lang, String key) {
             if (mContextPrefix != null && mContextPrefix.length() > 0 && key != null) {
                 String keyWithContext = key + mContextPrefix;
                 if (I18Next.getInstance().existValue(keyWithContext)) {
@@ -197,7 +196,7 @@ public interface Operation {
         }
 
         @Override
-        public String postProcess(String source) {
+        public String postProcess(String lang, String source) {
             if (source != null && mArgs != null && mArgs.length > 0) {
                 source = String.format(source, mArgs);
             }
@@ -248,7 +247,7 @@ public interface Operation {
         }
 
         @Override
-        public String postProcess(String source) {
+        public String postProcess(String lang, String source) {
             if (source != null) {
                 Options options = I18Next.getInstance().getOptions();
                 String prefix = options.getInterpolationPrefix();
@@ -320,7 +319,7 @@ public interface Operation {
         }
 
         @Override
-        public String postProcess(String source) {
+        public String postProcess(String lang, String source) {
             if (source == null) {
                 source = mValue;
             }
