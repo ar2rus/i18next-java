@@ -3,30 +3,29 @@
  */
 package com.i18next.java;
 
-
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import org.json.JSONException;
-import org.json.JSONObject;
+import javax.json.Json;
+import javax.json.JsonException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonReader;
+import javax.json.JsonString;
 
 /**
  * @author stan
  */
 public class I18Next {
+
     /**
      * Used locally to tag Logs
      */
     //private static final String TAG = I18Next.class.getSimpleName();
-    
+
     private static final Logger LOG = Logger.getLogger(I18Next.class.getName());
-    
-    
 
     private static final String PREF_KEY_I18N = "i18n_json";
 
@@ -36,13 +35,15 @@ public class I18Next {
     private static final String COMMA = ",";
 
     private Options mOptions = new Options();
-    private JSONObject mRootObject = new JSONObject();
+    private JsonObject mRootObject = Json.createObjectBuilder().build();
 
     /**
-     * SingletonHolder is loaded on the first execution of Singleton.getInstance()
-     * or the first access to SingletonHolder.INSTANCE, not before.
+     * SingletonHolder is loaded on the first execution of
+     * Singleton.getInstance() or the first access to SingletonHolder.INSTANCE,
+     * not before.
      */
     private static class SingletonHolder {
+
         public static final I18Next INSTANCE = new I18Next();
     }
 
@@ -75,7 +76,6 @@ public class I18Next {
 //            }
 //        }
 //    }
-
     public static boolean isI18NextKeyCandidate(CharSequence key) {
         if (key != null && key.length() > 0) {
             return key.toString().matches("([a-z0-9]+((\\_)([a-z0-9]+))*)+((\\.)[a-z0-9]+((\\_)([a-z0-9]+))*)+");
@@ -85,7 +85,7 @@ public class I18Next {
     }
 
     public boolean isEmpty() {
-        return mRootObject.length() == 0;
+        return mRootObject.isEmpty();
     }
 
     public Options getOptions() {
@@ -149,7 +149,7 @@ public class I18Next {
     public String _t(String lang, String key) {
         return t(lang, key, null);
     }
-    
+
     public String t(String key) {
         return _t(mOptions.getLanguage(), key);
     }
@@ -163,7 +163,6 @@ public class I18Next {
 //    public String _t(String lang, String... keys) {
 //        return t(lang, keys, null);
 //    }
-
     public String t(String... keys) {
         return _t(mOptions.getLanguage(), keys, null);
     }
@@ -192,7 +191,7 @@ public class I18Next {
         }
         return innerProcessValue;
     }
-    
+
     public String t(String[] keys, Operation operation) {
         return _t(mOptions.getLanguage(), keys, operation);
     }
@@ -214,12 +213,10 @@ public class I18Next {
     public boolean existValue(String lang, String key) {
         return getValueRaw(lang, key, null) != null;
     }
-    
-     public boolean existValue(String key) {
-         return existValue(mOptions.getLanguage(), key);
-     }
-    
-    
+
+    public boolean existValue(String key) {
+        return existValue(mOptions.getLanguage(), key);
+    }
 
     private String getValueRaw(String lang, String key, Operation operation) {
         if (key == null) {
@@ -264,29 +261,29 @@ public class I18Next {
     }
 
     private String getValueRawByLanguageWithNamespace(String lang, String namespace, String[] splitKeys) {
-        JSONObject rootObject = getRootObjectByLang(lang);
+        JsonObject rootObject = getRootObjectByLang(lang);
         if (rootObject != null) {
-            Object o = rootObject.opt(namespace);
+            Object o = rootObject.get(namespace);   //opt
             for (int i = 0; i < splitKeys.length; i++) {
                 String splitKey = splitKeys[i];
-                if (o instanceof JSONObject) {
-                    o = ((JSONObject) o).opt(splitKey);
+                if (o instanceof JsonObject) {
+                    o = ((JsonObject) o).get(splitKey); //opt
                 } else {
                     o = null;
                     break;
                 }
             }
-            if (o instanceof String) {
-                return (String) o;
+            if (o instanceof JsonString) {
+                return ((JsonString) o).getString();
             }
         }
         return null;
     }
 
-    private JSONObject getRootObjectByLang(String lang) {
-        JSONObject result = null;
+    private JsonObject getRootObjectByLang(String lang) {
+        JsonObject result = null;
         if (lang != null) {
-            result = mRootObject.optJSONObject(lang);
+            result = mRootObject.getJsonObject(lang);
             if (result == null) {
                 int indexOfLangSeparator = lang.lastIndexOf(SEPARATOR_LANGUAGE_COUNTRY);
                 if (indexOfLangSeparator > 0) {
@@ -296,6 +293,18 @@ public class I18Next {
             }
         }
         return result;
+    }
+
+    public JsonObject getRawObject(String lang) {
+        return getRootObjectByLang(lang);
+    }
+
+    public JsonObject getRawObject(String lang, String namespace) {
+        JsonObject rootObject = getRootObjectByLang(lang);
+        if (rootObject != null) {
+            return rootObject.getJsonObject(namespace);
+        }
+        return null;
     }
 
     static String getConvertLang(String lang) {
@@ -323,8 +332,16 @@ public class I18Next {
                     while (commaIndex > 0 && paramTrim.length() > commaIndex + 1) {
                         String textLeft = paramTrim.substring(commaIndex + 1);
                         try {
-                            JSONObject jsonObject = new JSONObject(textLeft);
-                            String countParam = jsonObject.optString("count");
+
+                            JsonReader jsonReader = Json.createReader(new StringReader(textLeft));
+                            JsonObject jsonObject = jsonReader.readObject();
+                            jsonReader.close();
+
+                            JsonNumber countJsonParam = jsonObject.getJsonNumber("count");
+                            String countParam = null;
+                            if (countJsonParam != null) {
+                                countParam = String.valueOf(countJsonParam.intValue());
+                            }
                             if (!/*TextUtils.isEmpty(countParam)*/(countParam == null || countParam.isEmpty())) {
                                 String countParamWithReplace
                                         = getRawWithNestingReplaced(countParam, operation);
@@ -351,7 +368,7 @@ public class I18Next {
                                 } catch (NumberFormatException ex) {
                                 }
                             }
-                        } catch (JSONException e) {
+                        } catch (JsonException e) {
                             commaIndex = paramTrim.indexOf(COMMA, commaIndex + 1);
                         }
                     }
@@ -376,14 +393,20 @@ public class I18Next {
         return null;
     }
 
-
-    private void load(String lang, String namespace, JSONObject json) throws JSONException {
-        JSONObject rootLanguage = mRootObject.optJSONObject(getConvertLang(lang));
-        if (rootLanguage == null) {
-            rootLanguage = new JSONObject();
-            mRootObject.put(lang, rootLanguage);
+    private void load(String lang, String namespace, JsonObject json) throws JsonException {
+        JsonObjectBuilder rootLanguageBuilder = Json.createObjectBuilder();
+        JsonObject rootLanguage = mRootObject.getJsonObject(getConvertLang(lang));
+        if (rootLanguage != null) {
+            rootLanguage.forEach(rootLanguageBuilder::add);
         }
-        rootLanguage.put(namespace, json);
+        rootLanguageBuilder.add(namespace, json);
+
+        JsonObjectBuilder mRootObjectBuilder = Json.createObjectBuilder();
+        mRootObject.forEach(mRootObjectBuilder::add);
+        mRootObjectBuilder.add(lang, rootLanguageBuilder.build());
+
+        mRootObject = mRootObjectBuilder.build();
+
         initDefaultNamespaceIfNeeded(namespace);
     }
 
@@ -393,7 +416,7 @@ public class I18Next {
 
     public static class Loader {
 
-        private JSONObject mJSONObject;
+        private JsonObject mJSONObject;
         private String mNameSpace;
         private String mLang;
         private I18Next mI18Next;
@@ -427,12 +450,15 @@ public class I18Next {
 //            }
 //            return from(json);
 //        }
+        public Loader from(String json) throws JsonException {
+            JsonReader jsonReader = Json.createReader(new StringReader(json));
+            JsonObject object = jsonReader.readObject();
+            jsonReader.close();
 
-        public Loader from(String json) throws JSONException {
-            return from(new JSONObject(json));
+            return from(object);
         }
 
-        public Loader from(JSONObject jsonObject) {
+        public Loader from(JsonObject jsonObject) {
             mJSONObject = jsonObject;
             return this;
         }
@@ -447,7 +473,7 @@ public class I18Next {
             return this;
         }
 
-        public void load() throws JSONException {
+        public void load() throws JsonException {
             if (mLang == null) {
                 mLang = mI18Next.mOptions.getLanguage();
             }

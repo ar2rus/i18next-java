@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.json.JSONException;
+import javax.json.JsonException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -55,14 +55,14 @@ public class I18NextTest {
                     + "  }"
                     + "}";
             I18Next.getInstance().loader().from(content).lang("en_en").namespace("common_test").load();
-        } catch (JSONException e) {
+        } catch (JsonException e) {
             LOG.log(Level.WARNING, e.getMessage(), e);
             fail(e.getMessage());
         }
         try {
             String content = "{\"app\":{\"name\":\"i18nextspecific\"}}";
             I18Next.getInstance().loader().from(content).namespace("specific").load();
-        } catch (JSONException e) {
+        } catch (JsonException e) {
             LOG.log(Level.WARNING, e.getMessage(), e);
             fail(e.getMessage());
         }
@@ -73,7 +73,7 @@ public class I18NextTest {
         
             I18Next.getInstance().getOptions().setLanguage("en_en");
             
-        } catch (JSONException e) {
+        } catch (JsonException e) {
             LOG.log(Level.WARNING, e.getMessage(), e);
             fail(e.getMessage());
         }
