@@ -4,6 +4,7 @@
 package com.i18next.java;
 
 import java.io.StringReader;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -305,6 +306,10 @@ public class I18Next {
             return rootObject.getJsonObject(namespace);
         }
         return null;
+    }
+    
+    public Set<String> getAvailableLangs(){
+        return mRootObject.keySet();
     }
 
     static String getConvertLang(String lang) {
