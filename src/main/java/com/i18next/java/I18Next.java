@@ -148,7 +148,7 @@ public class I18Next {
     }
 
     public String _t(String lang, String key) {
-        return t(lang, key, null);
+        return _t(lang, key, null);
     }
 
     public String t(String key) {
