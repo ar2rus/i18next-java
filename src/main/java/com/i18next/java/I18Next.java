@@ -202,7 +202,7 @@ public class I18Next {
         if (operation instanceof Operation.PostOperation) {
             rawValue = ((Operation.PostOperation) operation).postProcess(lang, rawValue);
         }
-        String rawValueNestingReplaced = getRawWithNestingReplaced(rawValue, operation);
+        String rawValueNestingReplaced = getRawWithNestingReplaced(lang, rawValue, operation);
         if (rawValueNestingReplaced != null) {
             innerProcessValue = transformRawValue(lang, operation, rawValueNestingReplaced);
         } else {
@@ -319,7 +319,7 @@ public class I18Next {
         return lang;
     }
 
-    private String getRawWithNestingReplaced(String raw, Operation operation) {
+    private String getRawWithNestingReplaced(String lang, String raw, Operation operation) {
         // nesting
         String reusePrefix = mOptions.getReusePrefix();
         String reuseSuffix = mOptions.getReuseSuffix();
@@ -349,7 +349,7 @@ public class I18Next {
                             }
                             if (!/*TextUtils.isEmpty(countParam)*/(countParam == null || countParam.isEmpty())) {
                                 String countParamWithReplace
-                                        = getRawWithNestingReplaced(countParam, operation);
+                                        = getRawWithNestingReplaced(lang, countParam, operation);
                                 if (countParamWithReplace != null) {
                                     countParam = countParamWithReplace;
                                 }
@@ -378,7 +378,7 @@ public class I18Next {
                         }
                     }
 
-                    String replacement = t(paramTrim, operation);
+                    String replacement = _t(lang, paramTrim, operation);
                     if (replacement == null) {
                         replacement = "";
                     }
@@ -386,7 +386,7 @@ public class I18Next {
                     raw = raw.replace(param, replacement);
                     if (hashBefore != raw.hashCode()) {
                         // the string has been changed, try to change it again
-                        String rawWithSubReplacement = getRawWithNestingReplaced(raw, operation);
+                        String rawWithSubReplacement = getRawWithNestingReplaced(lang, raw, operation);
                         if (rawWithSubReplacement != null) {
                             raw = rawWithSubReplacement;
                         }
